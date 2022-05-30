@@ -18,6 +18,7 @@
 
 AsyncWebServer server(80);
 ESP8266React esp8266React(&server);
+
 LightMqttSettingsService lightMqttSettingsService =
     LightMqttSettingsService(&server, esp8266React.getFS(), esp8266React.getSecurityManager());
 LightStateService lightStateService = LightStateService(&server,
@@ -43,11 +44,15 @@ void setup() {
   // start serial and filesystem
   Serial.begin(SERIAL_BAUD_RATE);
 
+  // pinMode(PIN_OUT_ONBOARD_LED,OUTPUT);
+  // digitalWrite(PIN_OUT_ONBOARD_LED, LOW);
+  // delay(2500);
+  // digitalWrite(PIN_OUT_ONBOARD_LED, HIGH);
+
   // start the framework and demo project
   esp8266React.begin();
 
   // ENDSTOP
-
   // pinMode(PIN_GND_ENDSTOP, OUTPUT);
   // digitalWrite(PIN_GND_ENDSTOP, LOW);
 
@@ -67,14 +72,13 @@ void setup() {
   buttonStart.attachLongPressStart(wrapStartCloseing);
   buttonStart.attachLongPressStop(wrapStopClosing);
 
-  curtain.begin();
-
-
   // load the initial light settings
-  lightStateService.begin();
+  // lightStateService.begin();
 
   // start the light service
-  lightMqttSettingsService.begin();
+  // lightMqttSettingsService.begin();
+
+  curtain.begin();
 
   // start the server
   server.begin();
@@ -84,11 +88,8 @@ void loop() {
   
   
   buttonStart.tick();
-  
   curtain.tick();
 
   // run the framework's loop function
   esp8266React.loop();
-
-
 }

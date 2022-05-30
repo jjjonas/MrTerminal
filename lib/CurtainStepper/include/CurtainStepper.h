@@ -18,20 +18,21 @@
 
 #ifndef ENDSTOP_REACHED
 // Define detection logic of endstop switch
-#define ENDSTOP_REACHED HIGH
+#define ENDSTOP_REACHED 0x1
 #endif
 
-#ifndef DEFAULT_TURNS_TO_OPEN
-#define DEFAULT_TURNS_TO_OPEN  25
+#ifndef DEFAULT_OPENING_DISTANCE_CM
+#define DEFAULT_OPENING_DISTANCE_CM 66.0
 #endif
 
 
-#define BLINK_CYLE_SLEEP_ON 1000
+#define BLINK_CYLE_SLEEP_ON 5000
 #define BLINK_CYLE_SLEEP_OFF 100
-#define BLINK_CYLE_OPEN 500
+#define BLINK_CYLE_OPEN 1000
 #define BLINK_CYLE_CLOSE 100
 
-
+#define OPEN -1
+#define CLOSE 1
 
 class CurtainStepper;
 
@@ -48,19 +49,28 @@ class CurtainStepper {
   // Target RPM for cruise speed
   float _rpm = 60.0;
   
+  double _cmPerRound = 3.7699;      //cm
+  double _cmFullMovement = DEFAULT_OPENING_DISTANCE_CM;    //cm
+  long   _stepsFullMovement = 0;      //steps
+
   // Acceleration and deceleration values are always in FULL steps / s^2
   short _motor_Acceleration = 150;
   short _motor_Deceleration = 500;
 
-  int _turnsToOpent = DEFAULT_TURNS_TO_OPEN;
-
+  /*
+   * actual position in microsteps
+   */
   int _postition = -1;
-  bool _homed = false;
+  
+  bool _autoHomingAfterBoot = false;
 
+  bool _homed = false;
   bool _homingActive = false;
   bool _openCurtainActive = false;
 
   void _runHomeingToEndstop();
+
+  
 
   public:
   CurtainStepper();
@@ -73,8 +83,11 @@ class CurtainStepper {
   void startHomeingToEndstop();
   void startClosing();
   void stopClosing();
+  
 
   void toogleOpenCurtain();
+
+  void setOpeningDistance(double centimeters);
   
   void tick();
 
