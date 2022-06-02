@@ -25,9 +25,6 @@ CurtainStateService::CurtainStateService(AsyncWebServer* server,
                AuthenticationPredicates::IS_AUTHENTICATED),
     _mqttClient(mqttClient) {
       
-  // configure led to be output
-  pinMode(LED_PIN, OUTPUT);
-
   // configure settings service update handler to update LED state
   addUpdateHandler([&](const String& originId) { onConfigUpdated(); }, false);
 }
@@ -40,6 +37,6 @@ void CurtainStateService::begin() {
 
 void CurtainStateService::onConfigUpdated() {
   Serial.println("CurtainStateService::onConfigUpdated()");
-  digitalWrite(LED_PIN, _state.closed ? LED_ON : LED_OFF);
+  // digitalWrite(LED_PIN, _state.closed ? LED_ON : LED_OFF);
 }
 
