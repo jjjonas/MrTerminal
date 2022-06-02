@@ -1,7 +1,6 @@
 #ifndef CurtainStateService_h
 #define CurtainStateService_h
 
-#include <CurtainMqttSettingsService.h>
 
 #include <HttpEndpoint.h>
 #include <MqttPubSub.h>
@@ -13,6 +12,11 @@
 #define OFF_STATE "OFF"
 #define ON_STATE "ON"
 
+
+#define DEFAULT_CURTAIN_CLOSED_STATE false
+#define OPEN_STATE "OPEN"
+#define CLOSED_STATE "CLOSED"
+
 // Note that the built-in LED is on when the pin is low on most NodeMCU boards.
 // This is because the anode is tied to VCC and the cathode to the GPIO 4 (Arduino pin 2).
 #define LED_ON 0x0
@@ -23,49 +27,33 @@
 
 class CurtainState {
  public:
-  bool ledOn;
+
+  bool closed;
 
   static void read(CurtainState& settings, JsonObject& root) {
-    root["led_on"] = settings.ledOn;
+    root["closed"] = settings.closed;
   }
 
   static StateUpdateResult update(JsonObject& root, CurtainState& curtainState) {
-    boolean newState = root["led_on"] | DEFAULT_LED_STATE;
-    if (curtainState.ledOn != newState) {
-      curtainState.ledOn = newState;
+    Serial.println("CurtainState::update()");
+
+    boolean newState = root["closed"] | DEFAULT_CURTAIN_CLOSED_STATE;
+    if (curtainState.closed != newState) {
+      curtainState.closed = newState;
+      Serial.print("CurtainState::update():: closed=");
+      Serial.println(curtainState.closed);
       return StateUpdateResult::CHANGED;
     }
     return StateUpdateResult::UNCHANGED;
   }
 
-  static void haRead(CurtainState& settings, JsonObject& root) {
-    root["state"] = settings.ledOn ? ON_STATE : OFF_STATE;
-  }
-
-  static StateUpdateResult haUpdate(JsonObject& root, CurtainState& curtainState) {
-    String state = root["state"];
-    // parse new led state 
-    boolean newState = false;
-    if (state.equals(ON_STATE)) {
-      newState = true;
-    } else if (!state.equals(OFF_STATE)) {
-      return StateUpdateResult::ERROR;
-    }
-    // change the new state, if required
-    if (curtainState.ledOn != newState) {
-      curtainState.ledOn = newState;
-      return StateUpdateResult::CHANGED;
-    }
-    return StateUpdateResult::UNCHANGED;
-  }
 };
 
 class CurtainStateService : public StatefulService<CurtainState> {
  public:
   CurtainStateService(AsyncWebServer* server,
                     SecurityManager* securityManager,
-                    AsyncMqttClient* mqttClient,
-                    CurtainMqttSettingsService* curtainMqttSettingsService);
+                    AsyncMqttClient* mqttClient);
   void begin();
 
  private:
@@ -73,10 +61,9 @@ class CurtainStateService : public StatefulService<CurtainState> {
   MqttPubSub<CurtainState> _mqttPubSub;
   WebSocketTxRx<CurtainState> _webSocket;
   AsyncMqttClient* _mqttClient;
-  CurtainMqttSettingsService* _curtainMqttSettingsService;
 
-  void registerConfig();
   void onConfigUpdated();
+
 };
 
 #endif

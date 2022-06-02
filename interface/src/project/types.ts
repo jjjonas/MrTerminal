@@ -1,3 +1,9 @@
+
+export interface CurtainState {
+  closed: boolean;
+  distance: number;
+}
+
 export interface LightState {
   led_on: boolean;
 }

@@ -2,6 +2,7 @@
 #include <LightMqttSettingsService.h>
 #include <LightStateService.h>
 
+#include <CurtainStateService.h>
 
 #include "pins.h"
 #include "OneButton.h"
@@ -19,12 +20,20 @@
 AsyncWebServer server(80);
 ESP8266React esp8266React(&server);
 
-LightMqttSettingsService lightMqttSettingsService =
-    LightMqttSettingsService(&server, esp8266React.getFS(), esp8266React.getSecurityManager());
-LightStateService lightStateService = LightStateService(&server,
-                                                        esp8266React.getSecurityManager(),
-                                                        esp8266React.getMqttClient(),
-                                                        &lightMqttSettingsService);
+// LightMqttSettingsService lightMqttSettingsService =
+//     LightMqttSettingsService(&server, esp8266React.getFS(), esp8266React.getSecurityManager());
+
+
+// LightStateService lightStateService = LightStateService(&server,
+//                                                         esp8266React.getSecurityManager(),
+//                                                         esp8266React.getMqttClient(),
+//                                                         &lightMqttSettingsService);
+
+
+CurtainStateService curtainStateService = CurtainStateService(&server,
+                                                              esp8266React.getSecurityManager(),
+                                                              esp8266React.getMqttClient());
+
 
 
 
@@ -72,13 +81,17 @@ void setup() {
   buttonStart.attachLongPressStart(wrapStartCloseing);
   buttonStart.attachLongPressStop(wrapStopClosing);
 
-  // load the initial light settings
-  // lightStateService.begin();
 
-  // start the light service
-  // lightMqttSettingsService.begin();
+
+  curtainStateService.addUpdateHandler([&](const String& originId) {
+            
+      Serial.print("The light's state has been updated by: "); 
+      Serial.println(originId);       
+    }
+);
 
   curtain.begin();
+  curtainStateService.begin();  
 
   // start the server
   server.begin();

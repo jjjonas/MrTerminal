@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { Navigate, Routes, Route } from 'react-router-dom';
 
 import DemoProject from './DemoProject';
+import CurtainProject from './CurtainProject';
 
 const ProjectRouting: FC = () => {
   return (
@@ -14,6 +15,7 @@ const ProjectRouting: FC = () => {
         // Add your project page routes below.
       }
       <Route path="demo/*" element={<DemoProject />} />
+      <Route path="curtain/*" element={<CurtainProject />} />
     </Routes>
   );
 };

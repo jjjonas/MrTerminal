@@ -1,7 +1,16 @@
 import { AxiosPromise } from "axios";
 
 import { AXIOS } from "../api/endpoints";
+import { CurtainState } from "./types";
 import { LightMqttSettings, LightState } from "./types";
+
+export function readCurtainState(): AxiosPromise<CurtainState> {
+  return AXIOS.get('/curtainState');
+}
+
+export function updateCurtainState(curtainState: CurtainState): AxiosPromise<CurtainState> {
+  return AXIOS.post('/curtainState', curtainState);
+}
 
 export function readLightState(): AxiosPromise<LightState> {
   return AXIOS.get('/lightState');
