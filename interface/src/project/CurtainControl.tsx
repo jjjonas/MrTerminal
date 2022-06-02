@@ -21,11 +21,11 @@ const CurtainStateWebSocketForm: FC = () => {
     }
     return (
       <>
-        <MessageBox
+        {/* <MessageBox
           level="info"
           message="Öffnen Schließen via WebSockets. Wird direkt übertragen"
           my={2}
-        />
+        /> */}
         <BlockFormControlLabel
           control={
             <Switch
@@ -35,14 +35,14 @@ const CurtainStateWebSocketForm: FC = () => {
               color="primary"
             />
           }
-          label="Vorgang geschlossen?"
+          label="Schließen"
         />
       </>
     );
   };
 
   return (
-    <SectionContent title='WebSocket Example' titleGutter>
+    <SectionContent title='Bedienung IoT Vorhang' titleGutter>
       {content()}
     </SectionContent>
   );
