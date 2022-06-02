@@ -5,6 +5,8 @@
 #include <MqttPubSub.h>
 #include <WebSocketTxRx.h>
 
+#include <CurtainStepper.h>
+
 #define DEFAULT_CURTAIN_CLOSED_STATE false
 #define OPEN_STATE "OPEN"
 #define CLOSED_STATE "CLOSED"
@@ -40,7 +42,8 @@ class CurtainStateService : public StatefulService<CurtainState> {
  public:
   CurtainStateService(AsyncWebServer* server,
                     SecurityManager* securityManager,
-                    AsyncMqttClient* mqttClient);
+                    AsyncMqttClient* mqttClient,
+                    CurtainStepper* curtain);
   void begin();
 
  private:
@@ -48,6 +51,7 @@ class CurtainStateService : public StatefulService<CurtainState> {
   MqttPubSub<CurtainState> _mqttPubSub;
   WebSocketTxRx<CurtainState> _webSocket;
   AsyncMqttClient* _mqttClient;
+  CurtainStepper* _curtain;
 
   void onConfigUpdated();
 

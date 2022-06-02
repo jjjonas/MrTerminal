@@ -30,9 +30,7 @@ ESP8266React esp8266React(&server);
 //                                                         &lightMqttSettingsService);
 
 
-CurtainStateService curtainStateService = CurtainStateService(&server,
-                                                              esp8266React.getSecurityManager(),
-                                                              esp8266React.getMqttClient());
+
 
 
 
@@ -43,6 +41,11 @@ Blinker statusBlinker(PIN_OUT_ONBOARD_LED);
 OneButton buttonStart(PIN_IN_BUTTON, true, true);
 
 CurtainStepper curtain = CurtainStepper(stepper, statusBlinker, PIN_IN_ENDSTOP);
+
+CurtainStateService curtainStateService = CurtainStateService(&server,
+                                                              esp8266React.getSecurityManager(),
+                                                              esp8266React.getMqttClient(),
+                                                              &curtain);
 
 void wrapToogleOpenCurtain() { curtain.toogleOpenCurtain(); }
 void wrapStartHomeingToEndstop() { curtain.startHomeingToEndstop(); }
@@ -80,15 +83,6 @@ void setup() {
   buttonStart.setPressTicks(PRESS_DETECT_TIME);
   buttonStart.attachLongPressStart(wrapStartCloseing);
   buttonStart.attachLongPressStop(wrapStopClosing);
-
-
-
-  curtainStateService.addUpdateHandler([&](const String& originId) {
-            
-      Serial.print("The light's state has been updated by: "); 
-      Serial.println(originId);       
-    }
-);
 
   curtain.begin();
   curtainStateService.begin();  
