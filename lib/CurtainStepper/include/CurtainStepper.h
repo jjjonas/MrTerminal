@@ -31,8 +31,9 @@
 #define BLINK_CYLE_OPEN 1000
 #define BLINK_CYLE_CLOSE 100
 
-#define OPEN -1
-#define CLOSE 1
+#define DIRECTION_OPEN -1
+#define DIRECTION_CLOSE 1
+
 
 class CurtainStepper;
 
@@ -44,12 +45,29 @@ class CurtainStepper {
   
   protected:
 
+  enum Movement
+  { 
+      OPENING,
+      STOPPED,
+      CLOSING,
+      CLOSED,
+      OPEN,
+  };
+  enum MovementDirection
+  {
+    DIR_OPEN,
+    DIR_CLOSE
+  };
+
+  Movement _movState = STOPPED;
+  MovementDirection _dirCommand = DIR_CLOSE;
+
   int _pinIn_Endstop = -1;
 
   // Target RPM for cruise speed
   float _rpm = 60.0;
   
-  double _cmPerRound = 3.7699;      //cm
+  const double _cmPerRound = 3.7699;      //cm
   double _cmFullMovement = DEFAULT_OPENING_DISTANCE_CM;    //cm
   long   _stepsFullMovement = 0;      //steps
 
@@ -60,17 +78,16 @@ class CurtainStepper {
   /*
    * actual position in microsteps
    */
-  int _postition = -1;
+  int _position = -1;
   
   bool _autoHomingAfterBoot = false;
 
   bool _homed = false;
   bool _homingActive = false;
-  bool _openCurtainActive = false;
 
   void _runHomeingToEndstop();
 
-  
+  void _invalidateHomed();
 
   public:
   CurtainStepper();
@@ -81,9 +98,14 @@ class CurtainStepper {
 
   void begin();
   void startHomeingToEndstop();
+  
+  void startOpening();
+  void stopOpening();
+  
   void startClosing();
   void stopClosing();
   
+  void stop();
 
   void toogleOpenCurtain();
 

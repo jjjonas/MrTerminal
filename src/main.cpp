@@ -48,9 +48,9 @@ CurtainStateService curtainStateService = CurtainStateService(&server,
                                                               &curtain);
 
 void wrapToogleOpenCurtain() { curtain.toogleOpenCurtain(); }
-void wrapStartHomeingToEndstop() { curtain.startHomeingToEndstop(); }
+void wrapStartOpening() { curtain.startOpening(); }
 void wrapStartCloseing() { curtain.startClosing(); }
-void wrapStopClosing() { curtain.stopClosing(); }
+void wrapStop() { curtain.stop(); }
 
 void setup() {
   // start serial and filesystem
@@ -78,11 +78,11 @@ void setup() {
   buttonStart.setDebounceTicks(DEBOUNCE_TIME);
 	buttonStart.attachClick(wrapToogleOpenCurtain);
   
-  buttonStart.attachDoubleClick(wrapStartHomeingToEndstop);
+  buttonStart.attachDoubleClick(wrapStartOpening);
   
   buttonStart.setPressTicks(PRESS_DETECT_TIME);
   buttonStart.attachLongPressStart(wrapStartCloseing);
-  buttonStart.attachLongPressStop(wrapStopClosing);
+  buttonStart.attachLongPressStop(wrapStop);
 
   curtain.begin();
   curtainStateService.begin();  
@@ -92,7 +92,6 @@ void setup() {
 }
 
 void loop() {
-  
   
   buttonStart.tick();
   curtain.tick();

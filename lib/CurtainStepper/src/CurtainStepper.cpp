@@ -12,6 +12,7 @@
 CurtainStepper::CurtainStepper()
 {
 }
+
 CurtainStepper::CurtainStepper(A4988& stepper, Blinker& blinker, const int pin_endstop)
 {
   _stepper = &stepper;
@@ -42,10 +43,52 @@ void CurtainStepper::begin()
 void CurtainStepper::setOpeningDistance(double centimeters)
 {
   _cmFullMovement = centimeters;
-  _stepsFullMovement = _stepper->calcStepsForRotation((_cmFullMovement / _cmPerRound) * 360.0);
-  Serial.print("setOpeningDistance():: ");
+  
+  long __newStepsFullMovement = _stepper->calcStepsForRotation((_cmFullMovement / _cmPerRound) * 360.0);
+  long __dif =   __newStepsFullMovement - _stepsFullMovement; // + = longer | - = shorter
+
+
+  if (abs(__dif) < 5)
+  {
+    /* Do nothing */;
+  }
+  else if (__dif > 0)
+  {
+    /* way to close is now longer */
+    _dirCommand = MovementDirection::DIR_CLOSE;
+    _movState = Movement::CLOSING;
+    _stepsFullMovement = __newStepsFullMovement;
+  }
+  else if (__dif < 0)
+  {
+    /*        pos                            */
+    /* <-------|-------------------------->  */
+    /*         |     <-------------------->  */
+
+    if (_position > __newStepsFullMovement)
+    {    
+    /* was to close is now shorter */
+    /*               pos                     */
+    /*               <|------------------->  */
+
+      _dirCommand = MovementDirection::DIR_CLOSE;
+      _movState = Movement::CLOSED;
+      _position = __newStepsFullMovement;
+    }
+    else
+    {
+      _invalidateHomed();
+    }
+    _stepsFullMovement = __newStepsFullMovement;
+  }
+
+
+  Serial.print("setOpeningDistance():: update (old/new) ");
   Serial.print(_stepsFullMovement);
-  Serial.println(" microsteps");
+  Serial.print("/");
+  Serial.print(__newStepsFullMovement);
+
+  
 }
 
 void CurtainStepper::startHomeingToEndstop()
@@ -56,7 +99,8 @@ void CurtainStepper::startHomeingToEndstop()
     Serial.println("startHomeingToEndstop(): already at ENDSTOP");
     _homingActive = false;
     _homed = true;
-    _postition = 0;
+    _position = 0;
+    _movState = Movement::OPEN;
   }
   else
   {
@@ -64,7 +108,7 @@ void CurtainStepper::startHomeingToEndstop()
     _homingActive = true;
     _stepper->enable();
     delay(5);
-    _stepper->startMove(OPEN * _stepsFullMovement);
+    _stepper->startMove(DIRECTION_OPEN * _stepsFullMovement);
     delay(2);
   }
 }
@@ -73,39 +117,49 @@ void CurtainStepper::_runHomeingToEndstop()
 {    
   if (_homingActive)
   {      
-    if (digitalRead(_pinIn_Endstop) == HIGH)
+    if (digitalRead(_pinIn_Endstop) == ENDSTOP_REACHED)
     {          
         Serial.println("STOPPER REACHED");
 
         _stepper->stop();              
         _homingActive = false;
         _homed = true;
-        _postition = 0;
+        _position = 0;
+        _movState = Movement::OPEN;
     }
   }
+}
+
+void CurtainStepper::_invalidateHomed()
+{
+  Serial.println("_invalidateHomed()::");
+  _homingActive = false;
+  _homed = false;
+  _position = -1;
+  _movState = Movement::STOPPED;
 }
 
 void CurtainStepper::startClosing()
 {
     _status->setDelay(BLINK_CYLE_OPEN);
     Serial.print("startClosing():: ");  
-    
-    if (_postition == 0)
+    _dirCommand = MovementDirection::DIR_OPEN;
+    if (_position == 0)
     {
       Serial.println("from ENDSTOP");
       _stepper->enable();
       delay(5);
-      _stepper->startMove(CLOSE * _stepsFullMovement);
-      _openCurtainActive = true;
+      _stepper->startMove(DIRECTION_CLOSE * _stepsFullMovement);
+      _movState = CLOSING;
     }
-    else if (_postition > 0)
+    else if (_position > 0)
     {
       Serial.print("from position: "); 
-      Serial.println(_postition);
+      Serial.println(_position);
       _stepper->enable();
       delay(5);
-      _stepper->startMove(CLOSE * (_stepsFullMovement - _postition));
-      _openCurtainActive = true;
+      _stepper->startMove(DIRECTION_CLOSE * (_stepsFullMovement - _position));
+      _movState = CLOSING;
     }
     else 
     {
@@ -117,21 +171,93 @@ void CurtainStepper::startClosing()
 void CurtainStepper::stopClosing()
 {
   Serial.println("stopClosing()");
-  _postition = (_stepsFullMovement - _stepper->getStepsRemaining());
+  _position = (_stepsFullMovement - _stepper->getStepsRemaining());
   _stepper->stop();
-  _openCurtainActive = false;
+  _movState = STOPPED;
+}
+
+void CurtainStepper::startOpening()
+{
+    _status->setDelay(BLINK_CYLE_OPEN);
+    Serial.print("startOpening():: ");  
+    _dirCommand = MovementDirection::DIR_OPEN;
+    if (_position == 0)
+    {
+      Serial.println("still on ENDSTOP");
+    }
+    else if (_position > 0)
+    {
+      Serial.print("from position: "); 
+      Serial.println(_position);
+      _stepper->enable();
+      delay(5);
+      _stepper->startMove(DIRECTION_OPEN * (_position));
+      _movState = OPENING;
+    }
+    else 
+    {
+      Serial.println(" homing needed");
+      startHomeingToEndstop();
+    }
+}
+
+void CurtainStepper::stopOpening()
+{
+  Serial.println("stopOpening()");
+  _position = (_stepsFullMovement + _stepper->getStepsRemaining());
+  _stepper->stop();
+  _movState = STOPPED;
+}
+
+void CurtainStepper::stop()
+{
+  Serial.println("stop()");
+  switch (_movState)
+  {
+  case Movement::CLOSING:
+    stopClosing();
+    break;
+  case Movement::OPENING:
+    stopOpening();
+    break;
+  default:
+    break;
+  }
 }
 
 void CurtainStepper::toogleOpenCurtain()
 {
   Serial.println("toogleOpenCurtain()");  
-  if (_openCurtainActive)
+  
+  switch (_movState)
   {
-    stopClosing();
-  }
-  else
-  {
+  case Movement::OPEN:
     startClosing();
+    break;
+  case Movement::CLOSED:
+    startOpening();
+    break;
+  case Movement::OPENING:
+    stopOpening();
+    break;
+  case Movement::CLOSING:
+    stopClosing();
+    break;
+  case Movement::STOPPED:
+    switch (_dirCommand)
+    {
+    case MovementDirection::DIR_CLOSE:
+      startOpening();
+      break;
+    case MovementDirection::DIR_OPEN:
+      startClosing();
+      break;
+    default:
+      break;
+    }
+    break;
+  default:
+    break;
   }
 }
 
@@ -141,15 +267,23 @@ void CurtainStepper::tick()
   _runHomeingToEndstop();
   
   // motor control loop - send pulse and return how long to wait until next pulse
-  unsigned wait_time_micros = _stepper->nextAction();    
+
+  if (digitalRead(_pinIn_Endstop) == ENDSTOP_REACHED) 
+  {
+    stop();
+    startHomeingToEndstop();
+  }
+  
+  unsigned wait_time_micros = _stepper->nextAction();
 
   // 0 wait time indicates the motor has stopped
   if (wait_time_micros <= 0) {
-      _stepper->disable();       // comment out to keep motor powered
-      _status->setDelay(BLINK_CYLE_SLEEP_ON, BLINK_CYLE_SLEEP_OFF);
-      delay(1);        
-  }
+  _stepper->disable();       // comment out to keep motor powered
+  _status->setDelay(BLINK_CYLE_SLEEP_ON, BLINK_CYLE_SLEEP_OFF);
+  delay(1);     
   
+
+  /* call status blinker */
   if (enableStatusLED)
   {
     _status->blink();
