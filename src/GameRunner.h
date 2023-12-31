@@ -28,6 +28,7 @@
 
 class GameRunner
 {
+
     
     typedef bool (*GameMain)();
 	typedef void (*GamePrePost)();
@@ -47,11 +48,21 @@ class GameRunner
 
     public:
 
+       
+        
         enum GameID
         {
-            OFF = 0,
+            NONE = 0,
             GAME1 = 1,
             GAME2 = 2
+        };
+
+        enum GameState
+        {
+            ENTER,
+            RUN,
+            WIN,
+            LEAVE
         };
 
         static const GameRunner::GameID DEFAULT_GAME = GameID::GAME1;
@@ -61,7 +72,10 @@ class GameRunner
         // StateMachine stateMachine;
 
         // ----- Constructor ----------------------
+        // GameRunner();
+
         GameRunner(uint pinNextGame, uint pinLED1, uint pinButton1, uint pinLED2, uint pinButton2, uint pinLED3, uint pinButton3);
+
         
         // init game statemachine. call in setup()
         void Init();
@@ -75,21 +89,11 @@ class GameRunner
         void SetSpeed(uint16_t speed);
         uint16_t GetSpeed() const;
 
-        void SetGame(uint8_t gameid, bool launchLeaving = true, bool launchEntering = true);
-        uint8_t GetGame() const;
+        void SetRunningGame(GameID gameid, bool launchLeaving = true, bool launchEntering = true);
+        // GameID GetRunningGame() const;
 
         // uint8_t AddGame(bool (*game)(), void  (*pre)(), void (*post)());
         uint8_t AddGame(GameMain game, GamePrePost pre, GamePrePost post);
-
-        void Enter_GAME1();
-        bool Run_GAME1();
-        void Leave_GAME1();
-
-        void Enter_GAME2();
-        bool Run_GAME2();
-        void Leave_GAME2();
-
-        void Win_GAME();
 
 
     private:
@@ -107,13 +111,21 @@ class GameRunner
         uint _pinNextGameButton = -1;
 
         Game* _games;
+
         uint8_t _numGames;
-        uint8_t _currentGameIndex;
+        GameID _currentGameID;
+        GameID _requestedGameID;
+
+        GameState _gameState;
 
         void _setupPins();
+        
+        // add game methods to gamerunner
+        void _setupGames();
+        
         void _attachButtonCalls();
 
-        //TODO: Exchange with c++ templates
+        void _buttonClicked(uint8_t i);
         void _buttonClicked0();
         void _buttonClicked1();
         void _buttonClicked2();
@@ -129,6 +141,15 @@ class GameRunner
         void _allLedON();
 
         
+        void Enter_GAME1();
+        bool Run_GAME1();
+        void Leave_GAME1();
+
+        void Enter_GAME2();
+        bool Run_GAME2();
+        void Leave_GAME2();
+
+        void Win_GAME();
 
 };
 

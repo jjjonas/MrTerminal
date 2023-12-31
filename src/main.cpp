@@ -20,14 +20,6 @@ GameRunner Game(PIN_IN_BUTTON_NEXTGAME,
                 PIN_OUT_LED_BLUE, PIN_IN_BUTTON_BLUE,
                 PIN_OUT_LED_YELLOW, PIN_IN_BUTTON_YELLOW);
 
-
-// GameRunner game(PIN_IN
-
-bool wrapper_Run_GAME1()
-{
-  return Game.Run_GAME1();
-}
-
 void setup() {
   // start serial and filesystem
   Serial.begin(SERIAL_BAUD_RATE);
